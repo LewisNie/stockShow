@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha/css/bootstrap.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  </head>
+  <script>
+    var ws = new WebSocket('ws://localhost:8181');
+    var sendMessage=function(){
+        ws.send($('#message').val());
+    }
+    var stock_request={'stock':['APPL','YHOO','GOOG','MSFT','AMZN']};
+    var stocks = {
+      'APPL':0,
+      'YHOO':0,
+      'GOOG':0,
+      'MSFT':0,
+      'AMZN':0
+    };
+
+    $('#AAPL span').toggleClass('label-success');
+    ws.onopen = function(e) {
+      console.log('Connection to server opened');
+      ws.send(JSON.stringify(stock_request));
+    }
+    var changeStockEntry = function(symbol, originalValue, newValue) {
+      var valElem = $('#' + symbol + ' span');
+      valElem.html(newValue.toFixed(2));
+      if(newValue < originalValue) {
+        valElem.addClass('label-danger');
+        valElem.removeClass('label-success');
+      } else if(newValue > originalValue) {
+        valElem.addClass('label-success');
+        valElem.removeClass('label-danger');
+      }
+    }
+    ws.onmessage = function(e) {
+      var stocksData = JSON.parse(e.data);
+      console.log(stocksData)
+      for(var symbol in stocksData) {
+
+        if(stocksData.hasOwnProperty(symbol)) {
+          changeStockEntry(symbol, stocksData[symbol], stocks[symbol]);
+          stocks[symbol] = stocksData[symbol];
+        }
+      }
+    }
+    ws.onclose = function(e) {
+      console.log("Connection closed");
+      for(var symbol in stocks) {
+        if(stocks.hasOwnProperty(symbol)) {
+          stocks[symbol] = 0;
+        }
+      }
+    }
+  </script>
+  <body>
+   <!-- <input class="form-control" id="message" type="text" placeholder="Type text to echo in here">
+    <input type="submit" value="send" onclick="sendMessage(); return false">
+-->
+   <div class="container">
+     <table class="table">
+       <thead>
+       <tr>
+         <th>#</th>
+         <th>company name</th>
+         <th>price</th>
+       </tr>
+       </thead>
+       <tbody>
+        <tr>
+          <td>1</td>
+          <td>APPL</td>
+          <td  id="APPL"><span class="label label-success">0.0</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>YHOO</td>
+          <td id="YHOO"><span class="label label-default">0.0</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>GOOG</td>
+          <td id="GOOG"><span class="label label-default">0.0</span></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>MSFT</td>
+          <td id="MSFT"><span class="label label-default">0.0</span></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>AMZN</td>
+          <td id="AMZN"><span class="label label-default">0.0</span></td>
+        </tr>
+       </tbody>
+     </table>
+   </div>
+
+
+  </body>
+</html>
